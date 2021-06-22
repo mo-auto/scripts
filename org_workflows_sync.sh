@@ -54,12 +54,14 @@ fi
 current_repo="${GITHUB_REPOSITORY}"
 IFS='/' read -ra current_repo_array <<< "$current_repo"
 org="${current_repo_array[0]}"
+# To be removed:
+org="JanssenProject"
 
 if [ -z "${org}" ]; then
   echo_red 'org was not detected. Terminating.'
   exit 1
 else
-  echo_green "${org}"
+  echo_green "Found org : '${org}'"
 fi
 
 # Go to the root of the repo
@@ -134,7 +136,7 @@ process_repo() {
     if [[ -z "${target_file}" ]]; then
       echo "${source_file} doesn't exist in ${org_repo}"
       case "${source_file}" in
-        CODE_OF_CONDUCT.md | SECURITY.md)
+        "${SYNC_FILES}")
           echo "${source_file} missing in ${org_repo}, force updating."
           needs_update+=("${source_file}")
           ;;

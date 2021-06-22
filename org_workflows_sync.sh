@@ -37,9 +37,17 @@ if [ -z "${GITHUB_TOKEN}" ]; then
   exit 1
 fi
 
+# List repositories to sync to
 REPOSITORIES="${REPOSITORIES}"
 if [ -z "${REPOSITORIES}" ]; then
   echo_red 'No repositories to sync to. ENV (REPOSITORIES) not set. Terminating.'
+  exit 1
+fi
+
+# List repositories to sync to
+GPG_KEY_ID="${GPG_KEY_ID}"
+if [ -z "${GPG_KEY_ID}" ]; then
+  echo_red 'GPG KEY ID could not be found. ENV (GPG_KEY_ID) not set. Terminating.'
   exit 1
 fi
 
@@ -165,10 +173,11 @@ process_repo() {
     esac
   done
   if [[ -n "$(git status --porcelain)" ]]; then
-    #git config user.email "${git_mail}"
-    #git config user.name "${git_user}"
+    git config user.email "${git_mail}"
+    git config user.name "${git_user}"
+    git config --global user.signingkey "${GPG_KEY_ID}"
     git add .
-    git commit -S -m "${commit_msg}"
+    git commit -S -s -m "${commit_msg}"
     if push_branch "${org_repo}"; then
       if ! post_pull_request "${org_repo}" "${default_branch}"; then
         return 1

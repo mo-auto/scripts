@@ -135,12 +135,8 @@ process_repo() {
     fi
     if [[ -z "${target_file}" ]]; then
       echo "${source_file} doesn't exist in ${org_repo}"
-      case "${source_file}" in
-        "${SYNC_FILES}")
-          echo "${source_file} missing in ${org_repo}, force updating."
-          needs_update+=("${source_file}")
-          ;;
-      esac
+      echo "${source_file} missing in ${org_repo}, force updating."
+      needs_update+=("${source_file}")
       continue
     fi
     target_checksum="$(echo "${target_file}" | sha256sum | cut -d' ' -f1)"
@@ -168,12 +164,12 @@ process_repo() {
       *) cp -f "${source_dir}/${source_file}" "./${source_file}" ;;
     esac
   done
-
+  git status --porcelain
   if [[ -n "$(git status --porcelain)" ]]; then
     git config user.email "${git_mail}"
     git config user.name "${git_user}"
     git add .
-    git commit -s -m "${commit_msg}"
+    git commit -S -s -m "${commit_msg}"
     if push_branch "${org_repo}"; then
       if ! post_pull_request "${org_repo}" "${default_branch}"; then
         return 1

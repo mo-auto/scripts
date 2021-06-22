@@ -31,27 +31,27 @@ echo_yellow() {
   echo -e "${color_yellow}$@${color_none}" 1>&2
 }
 
-GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+GITHUB_TOKEN="${GITHUB_TOKEN}"
 if [ -z "${GITHUB_TOKEN}" ]; then
   echo_red 'GitHub token (GITHUB_TOKEN) not set. Terminating.'
   exit 1
 fi
 
-REPOSITORIES="${REPOSITORIES:-}"
+REPOSITORIES="${REPOSITORIES}"
 if [ -z "${REPOSITORIES}" ]; then
   echo_red 'No repositories to sync to. ENV (REPOSITORIES) not set. Terminating.'
   exit 1
 fi
 
 # List of files that should be synced.
-SYNC_FILES="${WORKFLOW_FILES :-}"
+SYNC_FILES="${WORKFLOW_FILES}"
 if [ -z "${SYNC_FILES}" ]; then
   echo_red 'No files to sync to. ENV (WORKFLOW_FILES) not set. Terminating.'
   exit 1
 fi
 
 # Determine  org from env GITHUB_REPOSITORY
-current_repo="${GITHUB_REPOSITORY :-}"
+current_repo="${GITHUB_REPOSITORY}"
 IFS='/' read -ra current_repo_array <<< "$current_repo"
 org="${current_repo_array[0]}"
 

@@ -88,6 +88,16 @@ github_api() {
   curl --retry 5 --silent --fail -u "${git_user}:${GITHUB_TOKEN}" "${url}" "$@"
 }
 
+get_index() {
+  my_array=${1}
+  value=${2}
+  for i in "${!my_array[@]}"; do
+   if [[ "${my_array[$i]}" = "${value}" ]]; then
+       echo "${i}";
+   fi
+done
+}
+
 get_default_branch() {
   github_api "repos/${1}" 2> /dev/null |
     jq -r .default_branch
@@ -133,27 +143,42 @@ process_repo() {
   echo "Default branch: ${default_branch}"
 
   local needs_update=()
+  # This is to track the names of files in the destination folder if they were changed.
+  local dest_needs_update=()
   for source_file in ${SYNC_FILES}; do
-    source_checksum="$(sha256sum "${source_dir}/${source_file}" | cut -d' ' -f1)"
+    org_source_file="$source_file"
+    # Sanitize source file in case its located in other folders besides workflows
+    IFS='=' read -ra source_file_array <<< "$source_file"
+    dest_source_file="${source_file_array[1]}"
+    if [[ -z "${dest_source_file}" ]]; then
+      dest_source_file="$org_source_file"
+    else
+      org_source_file="${source_file_array[0]}"
+    fi
 
-    target_file="$(curl -sL --fail "https://raw.githubusercontent.com/${org_repo}/${default_branch}/${source_file}")"
-    if [[ "${source_file}" == 'LICENSE' ]] && ! check_license "${target_file}" ; then
+    source_checksum="$(sha256sum "${source_dir}/${org_source_file}" | cut -d' ' -f1)"
+
+    target_file="$(curl -sL --fail "https://raw.githubusercontent.com/${org_repo}/${default_branch}/${dest_source_file}")"
+    if [[ "${dest_source_file}" == 'LICENSE' ]] && ! check_license "${target_file}" ; then
       echo "LICENSE in ${org_repo} is not apache, skipping."
       continue
     fi
     if [[ -z "${target_file}" ]]; then
-      echo "${source_file} doesn't exist in ${org_repo}"
-      echo "${source_file} missing in ${org_repo}, force updating."
-      needs_update+=("${source_file}")
+      echo "${dest_source_file} doesn't exist in ${org_repo}"
+      echo "${dest_source_file} missing in ${org_repo}, force updating."
+      needs_update+=("${org_source_file}")
+      dest_needs_update+=("${dest_source_file}")
+
       continue
     fi
     target_checksum="$(echo "${target_file}" | sha256sum | cut -d' ' -f1)"
     if [ "${source_checksum}" == "${target_checksum}" ]; then
-      echo "${source_file} is already in sync."
+      echo "${dest_source_file} is already in sync."
       continue
     fi
-    echo "${source_file} needs updating."
-    needs_update+=("${source_file}")
+    echo "${dest_source_file} needs updating."
+    needs_update+=("${org_source_file}")
+    dest_needs_update+=("${dest_source_file}")
   done
 
   if [[ "${#needs_update[@]}" -eq 0 ]] ; then
@@ -167,9 +192,9 @@ process_repo() {
   git checkout -b "${branch}" || return 1
 
   # Update the files in target repo by one from cloud-native repo.
-  for source_file in "${needs_update[@]}"; do
+  for i in "${!needs_update[@]}"; do
     case "${source_file}" in
-      *) cp -f "${source_dir}/${source_file}" "./${source_file}" ;;
+      *) cp -f "${source_dir}/${needs_update[$i]}" "./${dest_needs_update[$i]}" ;;
     esac
   done
   if [[ -n "$(git status --porcelain)" ]]; then

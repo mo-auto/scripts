@@ -9,7 +9,6 @@ set -uo pipefail
 
 git_mail="54212639+mo-auto@users.noreply.github.com"
 git_user="mo-auto"
-branch="repo_sync"
 commit_msg="ci(workflows): sync central workflows"
 pr_title="ci(workflows): synchronize workflows from ${GITHUB_REPOSITORY}"
 pr_msg="Propagating changes from ${GITHUB_REPOSITORY} default branch."
@@ -30,6 +29,13 @@ echo_green() {
 echo_yellow() {
   echo -e "${color_yellow}$@${color_none}" 1>&2
 }
+
+# PR branch to be created
+branch="${PR_BRANCH_NAME}"
+if [ -z "${PR_BRANCH_NAME}" ]; then
+  echo_red 'PR branch to be created at propective repos needs to be specified to. ENV (PR_BRANCH_NAME) not set. Terminating.'
+  exit 1
+fi
 
 GITHUB_TOKEN="${GITHUB_TOKEN}"
 if [ -z "${GITHUB_TOKEN}" ]; then

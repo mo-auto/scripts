@@ -68,8 +68,6 @@ fi
 current_repo="${GITHUB_REPOSITORY}"
 IFS='/' read -ra current_repo_array <<< "$current_repo"
 org="${current_repo_array[0]}"
-# To be removed:
-org="JanssenProject"
 
 if [ -z "${org}" ]; then
   echo_red 'org was not detected. Terminating.'

@@ -194,6 +194,7 @@ process_repo() {
   git clone --quiet "https://github.com/${org_repo}.git" "${tmp_dir}/${org_repo}"
   cd "${tmp_dir}/${org_repo}" || return 1
   git checkout -b "${branch}" || return 1
+  mkdir -p /.github/workflows
 
   # Update the files in target repo by one from cloud-native repo.
   for i in "${!needs_update[@]}"; do

@@ -194,7 +194,7 @@ process_repo() {
   git clone --quiet "https://github.com/${org_repo}.git" "${tmp_dir}/${org_repo}"
   cd "${tmp_dir}/${org_repo}" || return 1
   git checkout -b "${branch}" || return 1
-  mkdir -p /.github/workflows
+  mkdir -p ${tmp_dir}/${org_repo}/.github/workflows
 
   # Update the files in target repo by one from cloud-native repo.
   for i in "${!needs_update[@]}"; do
@@ -221,6 +221,7 @@ process_repo() {
 
 ## main
 mkdir -p "${tmp_dir}/${org}"
+
 # Iterate over all repositories in ${org}. The GitHub API can return 100 items
 # at most but it should be enough for us as there are less than 40 repositories
 # currently.
@@ -230,6 +231,7 @@ for repo in ${REPOSITORIES}; do
   prLink="$(github_api "${fetch_uri}" --show-error | jq -r '.[0].html_url')"
   if [[ "${prLink}" != "null" ]]; then
     echo_green "Pull request already opened for branch '${branch}': ${prLink}"
+    gh pr close ${prLink} -d
     echo "Either close it or merge it before running this script again!"
     continue
   fi
